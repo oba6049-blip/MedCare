@@ -84,13 +84,21 @@ export default function AdminDashboard({ user, token, onLogout, onGoBack }: Admi
 
     const headers = { 'Authorization': `Bearer ${token}` };
 
+    const checkResponse = async (res: Response) => {
+      if (res.status === 401) {
+        onLogout();
+        throw new Error('Unauthorized');
+      }
+      return res.json();
+    };
+
     Promise.all([
-      fetch('/api/admin/patients', { headers }).then(res => res.json()),
+      fetch('/api/admin/patients', { headers }).then(checkResponse),
       fetch('/api/doctors').then(res => res.json()),
-      fetch('/api/appointments', { headers }).then(res => res.json()),
-      fetch('/api/medical-records', { headers }).then(res => res.json()),
-      fetch('/api/prescriptions', { headers }).then(res => res.json()),
-      fetch('/api/admin/reports', { headers }).then(res => res.json())
+      fetch('/api/appointments', { headers }).then(checkResponse),
+      fetch('/api/medical-records', { headers }).then(checkResponse),
+      fetch('/api/prescriptions', { headers }).then(checkResponse),
+      fetch('/api/admin/reports', { headers }).then(checkResponse)
     ])
     .then(([patientsData, doctorsData, appointmentsData, recordsData, prescriptionsData, reportsData]) => {
       if (patientsData.patients) setPatients(patientsData.patients);
@@ -304,6 +312,11 @@ export default function AdminDashboard({ user, token, onLogout, onGoBack }: Admi
         body: JSON.stringify(formData)
       });
 
+      if (res.status === 401) {
+        onLogout();
+        return;
+      }
+
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Server operation failed');
@@ -337,6 +350,11 @@ export default function AdminDashboard({ user, token, onLogout, onGoBack }: Admi
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
+      if (res.status === 401) {
+        onLogout();
+        return;
+      }
+
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Delete failed');
@@ -364,6 +382,11 @@ export default function AdminDashboard({ user, token, onLogout, onGoBack }: Admi
         },
         body: JSON.stringify({ status: nextStatus })
       });
+
+      if (res.status === 401) {
+        onLogout();
+        return;
+      }
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to update status');

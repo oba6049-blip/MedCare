@@ -90,6 +90,12 @@ export default function PatientDashboard({ user, token, onLogout, onGoBack }: Pa
       const resApt = await fetch('/api/appointments', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      
+      if (resApt.status === 401) {
+        onLogout();
+        return;
+      }
+      
       const dataApt = await resApt.json();
       if (resApt.ok && dataApt.appointments) {
         setAppointments(dataApt.appointments);
@@ -99,6 +105,12 @@ export default function PatientDashboard({ user, token, onLogout, onGoBack }: Pa
       const resRec = await fetch('/api/medical-records', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+
+      if (resRec.status === 401) {
+        onLogout();
+        return;
+      }
+
       const dataRec = await resRec.json();
       if (resRec.ok && dataRec.records) {
         setRecords(dataRec.records);
@@ -108,6 +120,12 @@ export default function PatientDashboard({ user, token, onLogout, onGoBack }: Pa
       const resPre = await fetch('/api/prescriptions', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+
+      if (resPre.status === 401) {
+        onLogout();
+        return;
+      }
+
       const dataPre = await resPre.json();
       if (resPre.ok && dataPre.prescriptions) {
         setPrescriptions(dataPre.prescriptions);
@@ -195,6 +213,11 @@ export default function PatientDashboard({ user, token, onLogout, onGoBack }: Pa
         })
       });
 
+      if (response.status === 401) {
+        onLogout();
+        return;
+      }
+
       const result = await response.json();
       if (response.ok) {
         setSuccessMsg('Appointment scheduled successfully! View live progress in clinical queue.');
@@ -238,6 +261,11 @@ export default function PatientDashboard({ user, token, onLogout, onGoBack }: Pa
         },
         body: JSON.stringify(profileData)
       });
+
+      if (response.status === 401) {
+        onLogout();
+        return;
+      }
 
       const result = await response.json();
       if (response.ok) {

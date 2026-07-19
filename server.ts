@@ -179,7 +179,9 @@ const doctorSchema = new mongoose.Schema({
 
 const Doctor = (mongoose.models.Doctor || mongoose.model("Doctor", doctorSchema)) as any;
 
-// Initialize MongoDB Connection (Lazy / Safe)
+// Initialize MongoDB Connection (Lazy / Safe / Serverless-Ready)
+let cachedConnectionPromise: Promise<typeof mongoose> | null = null;
+
 async function connectToMongo() {
   if (!MONGODB_URI) {
     console.log("⚠️ MONGODB_URI is not provided. Falling back to in-memory store for development.");
@@ -187,9 +189,33 @@ async function connectToMongo() {
     return;
   }
 
+  if (mongoose.connection.readyState === 1) {
+    dbConnected = true;
+    dbError = null;
+    return mongoose;
+  }
+
+  if (cachedConnectionPromise) {
+    try {
+      await cachedConnectionPromise;
+      dbConnected = true;
+      dbError = null;
+      return mongoose;
+    } catch (err) {
+      cachedConnectionPromise = null; // reset cache on failure
+    }
+  }
+
   try {
     mongoose.set("strictQuery", false);
-    await mongoose.connect(MONGODB_URI);
+    console.log("Connecting to MongoDB via URI (masked):", MONGODB_URI.substring(0, 15) + "...");
+    
+    // In serverless environments, avoid buffering commands so we fail fast if DB goes down
+    cachedConnectionPromise = mongoose.connect(MONGODB_URI, {
+      bufferCommands: false,
+    });
+
+    await cachedConnectionPromise;
     dbConnected = true;
     dbError = null;
     console.log("✅ Successfully connected to MongoDB database.");
@@ -219,14 +245,30 @@ async function connectToMongo() {
     // Clean up any existing records of the old patient demo user (patient@medcare.com)
     await User.deleteMany({ email: "patient@medcare.com" });
     console.log("🧹 Cleaned up any old patient demo credentials from the database.");
+    return mongoose;
   } catch (err: any) {
     dbConnected = false;
     dbError = err.message || "Failed to connect to MongoDB";
     console.error("❌ MongoDB connection error:", dbError);
+    cachedConnectionPromise = null;
+    throw err;
   }
 }
 
-connectToMongo();
+// Background fire-and-forget trigger for non-serverless starts
+connectToMongo().catch(() => {});
+
+// Middleware to block and wait for database connection on Vercel / serverless requests
+app.use(async (req, res, next) => {
+  if (MONGODB_URI && mongoose.connection.readyState !== 1) {
+    try {
+      await connectToMongo();
+    } catch (err: any) {
+      console.error("Database connection middleware interception failed:", err.message);
+    }
+  }
+  next();
+});
 
 // --- Express API Routes ---
 

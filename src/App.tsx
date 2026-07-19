@@ -105,6 +105,17 @@ export default function App() {
     setCurrentView('landing');
   };
 
+  // Sync state on 401 unauthorized detection (e.g. database change or stale token)
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      handleLogout();
+    };
+    window.addEventListener('medcare_unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('medcare_unauthorized', handleUnauthorized);
+    };
+  }, []);
+
   const handleBookingAdded = () => {
     // Increment key to trigger live reload in Dashboard Preview
     setRefetchKey(prev => prev + 1);
