@@ -46,7 +46,7 @@ const DEFAULT_DOCTORS = [
     experience: '18 Years Experience',
     rating: 5.0,
     patients: '2,400+ Patients',
-    image: 'https://imgur.com/P1EQCL1.png',
+    image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400&h=400',
     availableTimes: ['Tuesday', 'Thursday']
   },
   {

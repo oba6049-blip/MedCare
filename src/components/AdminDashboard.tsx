@@ -32,6 +32,19 @@ interface AdminDashboardProps {
 
 export default function AdminDashboard({ user, token, onLogout, onGoBack }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<'patients' | 'doctors' | 'appointments' | 'records' | 'prescriptions' | 'reports'>('reports');
+  const [dbConnected, setDbConnected] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch('/api/status')
+      .then(res => res.json())
+      .then(data => {
+        setDbConnected(data.database === 'mongodb');
+      })
+      .catch(err => {
+        console.error('Failed to fetch db status:', err);
+        setDbConnected(false);
+      });
+  }, []);
   
   // Data lists
   const [patients, setPatients] = useState<any[]>([]);
@@ -471,7 +484,27 @@ export default function AdminDashboard({ user, token, onLogout, onGoBack }: Admi
               </div>
               <div>
                 <h2 className="font-bold text-slate-900 leading-tight">MedCare Admin</h2>
-                <p className="text-xs font-semibold text-blue-600">Administrative Portal</p>
+                <p className="text-xs font-semibold text-blue-600 flex items-center gap-1.5 mt-0.5">
+                  Administrative Portal
+                </p>
+                <div className="mt-1.5">
+                  {dbConnected === null ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[9px] font-bold border border-slate-200/50 animate-pulse">
+                      <span className="w-1 h-1 rounded-full bg-slate-400 block" />
+                      Checking DB...
+                    </span>
+                  ) : dbConnected ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[9px] font-bold border border-emerald-200/50 hover:bg-emerald-100/70 transition-all cursor-help" title="Live MongoDB Connected Successfully">
+                      <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse block" />
+                      MongoDB Active
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[9px] font-bold border border-amber-200/50 hover:bg-amber-100/70 transition-all cursor-help" title="Using local in-memory fallback. Set up MONGODB_URI in your environment secrets to connect to live cluster.">
+                      <span className="w-1 h-1 rounded-full bg-amber-500 block" />
+                      Local Fallback
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

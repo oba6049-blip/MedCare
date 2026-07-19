@@ -36,6 +36,19 @@ export default function PatientDashboard({ user, token, onLogout, onGoBack }: Pa
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [dbConnected, setDbConnected] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch('/api/status')
+      .then(res => res.json())
+      .then(data => {
+        setDbConnected(data.database === 'mongodb');
+      })
+      .catch(err => {
+        console.error('Failed to fetch db status:', err);
+        setDbConnected(false);
+      });
+  }, []);
 
   // States for database entities
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -262,8 +275,27 @@ export default function PatientDashboard({ user, token, onLogout, onGoBack }: Pa
             <div className="h-5 w-px bg-slate-200" />
             <div className="text-left">
               <span className="text-[10px] uppercase font-bold text-blue-600 tracking-wider block">Patient Interactive Gateway</span>
-              <h1 className="text-lg font-bold text-slate-900 flex items-center gap-1.5 leading-tight">
-                MedCare Portal <span className="text-[10px] font-mono font-bold bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-100">Patient Mode</span>
+              <h1 className="text-lg font-bold text-slate-900 flex flex-wrap items-center gap-1.5 leading-tight">
+                MedCare Portal 
+                <span className="text-[10px] font-mono font-bold bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-100">Patient Mode</span>
+                <span className="inline-flex items-center">
+                  {dbConnected === null ? (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[9px] font-bold border border-slate-200/50 animate-pulse">
+                      <span className="w-1 h-1 rounded-full bg-slate-400 block" />
+                      Checking DB...
+                    </span>
+                  ) : dbConnected ? (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[9px] font-bold border border-emerald-200/50 hover:bg-emerald-100/70 transition-all cursor-help" title="Live MongoDB Connected Successfully">
+                      <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse block" />
+                      MongoDB Active
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[9px] font-bold border border-amber-200/50 hover:bg-amber-100/70 transition-all cursor-help" title="Using local in-memory fallback. Set up MONGODB_URI in your environment secrets to connect to live cluster.">
+                      <span className="w-1 h-1 rounded-full bg-amber-500 block" />
+                      Local Fallback
+                    </span>
+                  )}
+                </span>
               </h1>
             </div>
           </div>

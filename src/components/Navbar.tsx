@@ -14,6 +14,7 @@ export default function Navbar({ onOpenBooking, user, onLogout, onOpenAuth, onNa
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
+  const [dbConnected, setDbConnected] = useState<boolean | null>(null);
 
   const navLinks = [
     { name: 'Home', href: '#home' },
@@ -24,6 +25,18 @@ export default function Navbar({ onOpenBooking, user, onLogout, onOpenAuth, onNa
     { name: 'Testimonials', href: '#testimonials' },
     { name: 'News', href: '#news' },
   ];
+
+  useEffect(() => {
+    fetch('/api/status')
+      .then(res => res.json())
+      .then(data => {
+        setDbConnected(data.database === 'mongodb');
+      })
+      .catch(err => {
+        console.error('Failed to fetch db status:', err);
+        setDbConnected(false);
+      });
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -71,20 +84,42 @@ export default function Navbar({ onOpenBooking, user, onLogout, onOpenAuth, onNa
         id="app-header"
       >
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          {/* Logo */}
-          <a
-            href="#home"
-            onClick={(e) => handleLinkClick(e, '#home')}
-            className="flex items-center gap-2.5 group"
-            id="nav-logo"
-          >
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-all">
-              <Activity size={22} className="animate-pulse" />
+          {/* Logo & Db Status Indicator */}
+          <div className="flex items-center gap-3">
+            <a
+              href="#home"
+              onClick={(e) => handleLinkClick(e, '#home')}
+              className="flex items-center gap-2.5 group"
+              id="nav-logo"
+            >
+              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-all">
+                <Activity size={22} className="animate-pulse" />
+              </div>
+              <span className="font-bold text-xl text-slate-900 tracking-tight">
+                MedCare<span className="text-blue-600">HMS</span>
+              </span>
+            </a>
+
+            {/* MongoDB Connection Status Indicator */}
+            <div className="hidden sm:flex items-center" id="mongodb-status-indicator">
+              {dbConnected === null ? (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold border border-slate-200/50 animate-pulse">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 block" />
+                  Checking DB...
+                </div>
+              ) : dbConnected ? (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200/50 hover:bg-emerald-100/70 transition-all cursor-help" title="Live MongoDB Connected Successfully">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse block" />
+                  MongoDB Connected
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold border border-amber-200/50 hover:bg-amber-100/70 transition-all cursor-help" title="Using local in-memory fallback. Set up MONGODB_URI in your environment secrets to connect to live cluster.">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 block" />
+                  Local DB Fallback
+                </div>
+              )}
             </div>
-            <span className="font-bold text-xl text-slate-900 tracking-tight">
-              MedCare<span className="text-blue-600">HMS</span>
-            </span>
-          </a>
+          </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1.5" id="desktop-nav">
